@@ -11,14 +11,20 @@ app.get('/proxy', async (req, res) => {
     }
 
     try {
+        // असली ब्राउज़र जैसे हेडर्स ताकि बोट या ब्लॉक न कर सके
+        const browserHeaders = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9,ru;q=0.8',
+            'Origin': 'https://rutube.ru',
+            'Referer': 'https://rutube.ru/'
+        };
+
         const response = await axios({
             method: 'get',
             url: targetUrl,
-            responseType: 'text', // म्निफेस्ट/टेक्स्ट डेटा को मॉडिफाई करने के लिए text रखा है
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Referer': 'https://rutube.ru/'
-            }
+            responseType: 'text', // प्लेलिस्ट मैनिपुलेट करने के लिए text
+            headers: browserHeaders
         });
 
         let contentType = response.headers['content-type'] || '';
@@ -32,7 +38,6 @@ app.get('/proxy', async (req, res) => {
             let modifiedLines = lines.map(line => {
                 line = line.trim();
                 if (line && !line.startsWith('#')) {
-                    // रिलेटिव या एब्सोल्यूट यूआरएल को प्रॉक्सी के जरिए रूट करें
                     let absoluteChunkUrl = new URL(line, parsedBaseUrl).toString();
                     return `/proxy?url=${encodeURIComponent(absoluteChunkUrl)}`;
                 }
@@ -47,10 +52,7 @@ app.get('/proxy', async (req, res) => {
             method: 'get',
             url: targetUrl,
             responseType: 'stream',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Referer': 'https://rutube.ru/'
-            }
+            headers: browserHeaders
         });
 
         Object.keys(streamResponse.headers).forEach(key => {
